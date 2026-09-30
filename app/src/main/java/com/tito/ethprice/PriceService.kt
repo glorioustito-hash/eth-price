@@ -20,7 +20,7 @@ import java.util.Locale
 import kotlin.concurrent.thread
 
 class PriceService : Service() {
-    private val ch = "eth_live"
+    private val ch = "eth_live_min"
     @Volatile private var running = false
 
     override fun onBind(i: Intent?): IBinder? = null
@@ -28,8 +28,9 @@ class PriceService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(3)
+        nm.deleteNotificationChannel("eth_live")
         nm.createNotificationChannel(
-            NotificationChannel(ch, "ETH live price", NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(ch, "ETH price (in shade only)", NotificationManager.IMPORTANCE_MIN)
         )
         val first = build(null)
         if (Build.VERSION.SDK_INT >= 29) {
