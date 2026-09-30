@@ -25,7 +25,8 @@ class PriceService : Service() {
     override fun onBind(i: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager nm.cancel(3)
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        nm.cancel(3)
         nm.createNotificationChannel(
             NotificationChannel(ch, "ETH live price", NotificationManager.IMPORTANCE_LOW)
         )
@@ -43,7 +44,6 @@ class PriceService : Service() {
                     if (t != null && running) {
                         Alerts.check(this, t.first)
                         nm.notify(2, build(t))
-                  
                     }
                     try { Thread.sleep(20000) } catch (e: InterruptedException) { }
                 }
@@ -54,7 +54,6 @@ class PriceService : Service() {
 
     override fun onDestroy() {
         running = false
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(3)
         super.onDestroy()
     }
 
@@ -68,7 +67,6 @@ class PriceService : Service() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
-            .setWhen(System.currentTimeMillis())
             .setContentIntent(openIntent())
         if (t == null) {
             b.setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle("ETH ...")
@@ -83,17 +81,6 @@ class PriceService : Service() {
         }
         return b.build()
     }
-
-    private fun labelNotification(): Notification =
-        Notification.Builder(this, ch)
-            .setSmallIcon(textIcon(listOf("ETH")))
-            .setContentTitle("ETH")
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setShowWhen(false)
-            .setWhen(System.currentTimeMillis() + 1000)
-            .setContentIntent(openIntent())
-            .build()
 
     private fun priceIcon(price: Double): Icon {
         val text = String.format(Locale.US, "%.0f", price)
