@@ -8,9 +8,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.Locale
 import kotlin.concurrent.thread
 
@@ -35,7 +32,9 @@ class PriceWidget : AppWidgetProvider() {
         val pending = goAsync()
         thread {
             try {
-                val price = fetch()
+                val p = Alerts.fetchPrice()
+                if (p != null) Alerts.check(context, p)
+                val text = if (p != null) String.format(Locale.US, "ETH €%,.2f", p) else "ETH error"
                 val tap = Intent(context, PriceWidget::class.java).apply {
                     action = ACTION_REFRESH
                 }
@@ -45,7 +44,7 @@ class PriceWidget : AppWidgetProvider() {
                 )
                 for (id in ids) {
                     val v = RemoteViews(context.packageName, R.layout.widget)
-                    v.setTextViewText(R.id.price, price)
+                    v.setTextViewText(R.id.price, text)
                     v.setOnClickPendingIntent(R.id.price, pi)
                     manager.updateAppWidget(id, v)
                 }
@@ -75,19 +74,5 @@ class PriceWidget : AppWidgetProvider() {
             System.currentTimeMillis() + 60_000,
             refreshIntent(context)
         )
-    }
-
-    private fun fetch(): String = try {
-        val c = URL("https://api.kraken.com/0/public/Ticker?pair=ETHEUR")
-            .openConnection() as HttpURLConnection
-        c.connectTimeout = 8000
-        c.readTimeout = 8000
-        val body = c.inputStream.bufferedReader().use { it.readText() }
-        val res = JSONObject(body).getJSONObject("result")
-        val p = res.getJSONObject(res.keys().next())
-            .getJSONArray("c").getString(0).toDouble()
-        String.format(Locale.US, "ETH €%,.2f", p)
-    } catch (e: Exception) {
-        "ETH error"
     }
 }
