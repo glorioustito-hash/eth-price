@@ -1,8 +1,9 @@
 package com.tito.ethprice
-android.content.Intent
+
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
@@ -79,11 +80,7 @@ class MainActivity : Activity() {
                 }
             }
         }
-        root.addView(tv)
-        root.addView(input)
-        root.addView(save)
-        root.addView(status)
-       val live = Button(this).apply {
+        val live = Button(this).apply {
             val on = prefs.getBoolean("live", false)
             text = if (on) "Live notification: ON" else "Live notification: OFF"
             setOnClickListener {
@@ -94,6 +91,10 @@ class MainActivity : Activity() {
                 text = if (now) "Live notification: ON" else "Live notification: OFF"
             }
         }
+        root.addView(tv)
+        root.addView(input)
+        root.addView(save)
+        root.addView(status)
         root.addView(live)
         setContentView(root)
     }
