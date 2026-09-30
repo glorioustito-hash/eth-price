@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -14,15 +15,27 @@ import java.util.Locale
 object Alerts {
     private const val CHANNEL = "eth_alert"
 
-    fun fetchPrice(): Double? = try {
+    private fun get(): JSONObject {
         val c = URL("https://api.kraken.com/0/public/Ticker?pair=ETHEUR")
             .openConnection() as HttpURLConnection
         c.connectTimeout = 8000
         c.readTimeout = 8000
         val body = c.inputStream.bufferedReader().use { it.readText() }
         val res = JSONObject(body).getJSONObject("result")
-        res.getJSONObject(res.keys().next())
-            .getJSONArray("c").getString(0).toDouble()
+        return res.getJSONObject(res.keys().next())
+    }
+
+    fun fetchPrice(): Double? = try {
+        get().getJSONArray("c").getString(0).toDouble()
+    } catch (e: Exception) {
+        null
+    }
+
+    fun fetchTicker(): Pair<Double, Double>? = try {
+        val d = get()
+        val o = d.get("o")
+        val open = if (o is JSONArray) o.getString(0).toDouble() else o.toString().toDouble()
+        Pair(d.getJSONArray("c").getString(0).toDouble(), open)
     } catch (e: Exception) {
         null
     }
