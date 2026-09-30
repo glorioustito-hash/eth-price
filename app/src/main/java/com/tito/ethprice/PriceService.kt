@@ -25,7 +25,7 @@ class PriceService : Service() {
     override fun onBind(i: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager nm.cancel(3)
         nm.createNotificationChannel(
             NotificationChannel(ch, "ETH live price", NotificationManager.IMPORTANCE_LOW)
         )
@@ -43,7 +43,7 @@ class PriceService : Service() {
                     if (t != null && running) {
                         Alerts.check(this, t.first)
                         nm.notify(2, build(t))
-                        nm.notify(3, labelNotification())
+                  
                     }
                     try { Thread.sleep(20000) } catch (e: InterruptedException) { }
                 }
