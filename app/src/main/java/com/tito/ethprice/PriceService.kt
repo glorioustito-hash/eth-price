@@ -8,11 +8,6 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Rect
-import android.graphics.Typeface
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.IBinder
@@ -28,7 +23,6 @@ class PriceService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(3)
-        nm.deleteNotificationChannel("eth_live")
         nm.createNotificationChannel(
             NotificationChannel(ch, "ETH price (in shade only)", NotificationManager.IMPORTANCE_MIN)
         )
@@ -64,42 +58,26 @@ class PriceService : Service() {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
+    private fun blankIcon(): Icon =
+        Icon.createWithBitmap(Bitmap.createBitmap(48, 48, Bitmap.Config.ARGB_8888))
+
     private fun build(t: Pair<Double, Double>?): Notification {
         val b = Notification.Builder(this, ch)
+            .setSmallIcon(blankIcon())
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setContentIntent(openIntent())
         if (t == null) {
-            b.setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle("ETH ...")
+            b.setContentTitle("ETH ...")
         } else {
             val pct = (t.first - t.second) / t.second * 100
             val arrow = if (pct >= 0) "▲" else "▼"
-            b.setSmallIcon(priceIcon(t.first))
-                .setContentTitle(String.format(Locale.US, "ETH €%,.2f", t.first))
+            b.setContentTitle(String.format(Locale.US, "ETH €%,.2f", t.first))
                 .setContentText(
                     String.format(Locale.US, "%s %.2f%% today", arrow, Math.abs(pct))
                 )
         }
         return b.build()
-    }
-
-    private fun priceIcon(price: Double): Icon {
-        val text = String.format(Locale.US, "%.0f", price)
-        val h = 96
-        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
-            textAlign = Paint.Align.CENTER
-            textSize = 104f
-        }
-        val w = (p.measureText(text) + 8f).toInt().coerceAtLeast(h)
-        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
-        val r = Rect()
-        p.getTextBounds(text, 0, text.length, r)
-        val y = h / 2f - (r.top + r.bottom) / 2f
-        c.drawText(text, w / 2f, y, p)
-        return Icon.createWithBitmap(bmp)
     }
 }
