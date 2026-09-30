@@ -1,30 +1,43 @@
 package com.tito.ethprice
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import kotlin.concurrent.thread
 
 class PriceWidget : AppWidgetProvider() {
 
+    companion object {
+        const val ACTION_REFRESH = "com.tito.ethprice.REFRESH"
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == ACTION_REFRESH) {
+            val mgr = AppWidgetManager.getInstance(context)
+            val ids = mgr.getAppWidgetIds(ComponentName(context, PriceWidget::class.java))
+            if (ids.isNotEmpty()) onUpdate(context, mgr, ids)
+        } else {
+            super.onReceive(context, intent)
+        }
+    }
+
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        scheduleNext(context)
         val pending = goAsync()
         thread {
             try {
                 val price = fetch()
-                val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
                 val tap = Intent(context, PriceWidget::class.java).apply {
-                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                    action = ACTION_REFRESH
                 }
                 val pi = PendingIntent.getBroadcast(
                     context, 0, tap,
@@ -33,15 +46,35 @@ class PriceWidget : AppWidgetProvider() {
                 for (id in ids) {
                     val v = RemoteViews(context.packageName, R.layout.widget)
                     v.setTextViewText(R.id.price, price)
-                    v.setTextViewText(R.id.time, "updated $time")
                     v.setOnClickPendingIntent(R.id.price, pi)
-                    v.setOnClickPendingIntent(R.id.time, pi)
                     manager.updateAppWidget(id, v)
                 }
             } finally {
                 pending.finish()
             }
         }
+    }
+
+    override fun onDisabled(context: Context) {
+        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        am.cancel(refreshIntent(context))
+    }
+
+    private fun refreshIntent(context: Context): PendingIntent {
+        val i = Intent(context, PriceWidget::class.java).apply { action = ACTION_REFRESH }
+        return PendingIntent.getBroadcast(
+            context, 1, i,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun scheduleNext(context: Context) {
+        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        am.setAndAllowWhileIdle(
+            AlarmManager.RTC,
+            System.currentTimeMillis() + 60_000,
+            refreshIntent(context)
+        )
     }
 
     private fun fetch(): String = try {
