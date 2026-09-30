@@ -11,6 +11,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Icon
 import android.os.Build
@@ -84,28 +85,20 @@ class PriceService : Service() {
 
     private fun priceIcon(price: Double): Icon {
         val text = String.format(Locale.US, "%.0f", price)
-        val mid = (text.length + 1) / 2
-        return textIcon(listOf(text.substring(0, mid), text.substring(mid)))
-    }
-
-    private fun textIcon(lines: List<String>): Icon {
-        val size = 96
-        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
-        val rowH = size / lines.size.toFloat()
+        val h = 96
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
             textAlign = Paint.Align.CENTER
-            textSize = ((rowH - 4f) / 0.72f).coerceAtMost(90f)
+            textSize = 104f
         }
-        while (lines.any { p.measureText(it) > size - 2 } && p.textSize > 20f) {
-            p.textSize -= 2f
-        }
-        val off = (p.descent() + p.ascent()) / 2f
-        for ((i, l) in lines.withIndex()) {
-            c.drawText(l, size / 2f, rowH * i + rowH / 2f - off, p)
-        }
+        val w = (p.measureText(text) + 8f).toInt().coerceAtLeast(h)
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        val r = Rect()
+        p.getTextBounds(text, 0, text.length, r)
+        val y = h / 2f - (r.top + r.bottom) / 2f
+        c.drawText(text, w / 2f, y, p)
         return Icon.createWithBitmap(bmp)
     }
 }
