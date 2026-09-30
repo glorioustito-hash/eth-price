@@ -83,6 +83,18 @@ class MainActivity : Activity() {
         root.addView(input)
         root.addView(save)
         root.addView(status)
+       val live = Button(this).apply {
+            val on = prefs.getBoolean("live", false)
+            text = if (on) "Live notification: ON" else "Live notification: OFF"
+            setOnClickListener {
+                val now = !prefs.getBoolean("live", false)
+                prefs.edit().putBoolean("live", now).apply()
+                val i = Intent(this@MainActivity, PriceService::class.java)
+                if (now) startForegroundService(i) else stopService(i)
+                text = if (now) "Live notification: ON" else "Live notification: OFF"
+            }
+        }
+        root.addView(live)
         setContentView(root)
     }
 
