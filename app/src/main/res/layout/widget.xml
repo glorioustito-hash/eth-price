@@ -14,7 +14,7 @@
         android:includeFontPadding="false"
         android:text="ETH ..."
         android:textColor="#FFFFFF"
-        android:textSize="22sp"
+        android:textSize="18sp"
         android:textStyle="bold"
         android:shadowColor="#000000"
         android:shadowRadius="6"
